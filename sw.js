@@ -1,4 +1,4 @@
-const CACHE = 'turfscore-v1';
+const CACHE = 'turfscore-v2';
 const ASSETS = ['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png',
   './fonts/ArchivoBlack-Regular.woff2','./fonts/WorkSans-Regular.woff2'];
 self.addEventListener('install', e => {

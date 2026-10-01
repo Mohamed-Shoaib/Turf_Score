@@ -116,7 +116,7 @@ input{width:100%;font-family:inherit;font-size:16px;padding:10px 12px;border-rad
         <button class="runbtn" data-run="0">0</button><button class="runbtn" data-run="1">1</button><button class="runbtn" data-run="2">2</button>
         <button class="runbtn" data-run="3">3</button><button class="runbtn" data-run="4">4</button><button class="runbtn" data-run="6">6</button>
       </div>
-      <div class="extras"><button id="wideBtn">Wide (+1)</button><button id="noballBtn">No ball (+1)</button></div>
+      <div class="extras"><button id="wideBtn">Wide</button><button id="noballBtn">No ball</button></div>
       <button class="wicketbtn" id="wicketBtn">Wicket</button>
       <div class="log" id="lastAction"></div>
       <div class="actions-row">
@@ -179,8 +179,8 @@ function record(type,runs){
   if(state.finished)return;
   const inn=currentInnings();
   if(type==='run'){inn.runs+=runs;inn.balls++;inn.history.push({type:'run',val:runs});setLog(runs===0?'Dot ball':runs+' run'+(runs>1?'s':''))}
-  else if(type==='wide'){inn.runs++;inn.history.push({type:'wide',val:1});setLog('Wide: +1 run, extra ball')}
-  else if(type==='noball'){inn.runs++;inn.history.push({type:'noball',val:1});setLog('No ball: +1 run, extra ball')}
+  else if(type==='wide'){inn.history.push({type:'wide',val:0});setLog('Wide: extra ball')}
+  else if(type==='noball'){inn.history.push({type:'noball',val:0});setLog('No ball: extra ball')}
   else if(type==='wicket'){inn.wickets++;inn.balls++;inn.history.push({type:'wicket',val:0});setLog('Wicket! '+inn.wickets+' down')}
   saveState();evaluateMatchState();renderMatch();
 }
