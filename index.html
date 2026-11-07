@@ -228,6 +228,8 @@ body[data-theme="dark"] .over-row-label{color:var(--text-2-dark);}
 }
 body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);color:var(--text-2-dark);}
 @media (prefers-color-scheme:dark){body:not([data-theme="light"]) .over-chip.placeholder{border-color:var(--line-dark);color:var(--text-2-dark);}}
+.prefs{display:flex;gap:8px;margin-bottom:14px;}
+.prefs .btn{width:auto;flex:1;}
 </style>
 </head>
 <body>
@@ -235,6 +237,11 @@ body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);col
   <div class="brand">
     <h1>Turf Score</h1>
     <span id="dateTag"></span>
+  </div>
+
+  <div class="prefs">
+    <button class="btn ghost small" id="hapticToggle">Haptic: On</button>
+    <button class="btn ghost small" id="soundToggle">Sound: On</button>
   </div>
 
   <!-- SETUP SCREEN -->
@@ -751,15 +758,20 @@ el('abandonBtn').addEventListener('click', ()=>{
 el('startMatchBtn').addEventListener('click', startMatch);
 el('startSecondBtn').addEventListener('click', startSecondInnings);
 
-// Haptic feedback: vibrate on Android, hidden "switch" checkbox trick on iPhone Safari
+// Feedback on every button press: haptic (Android + iPhone) and a short click sound
+const prefs = (()=>{ try{ return JSON.parse(localStorage.getItem('turfscore_prefs')) || {}; }catch(e){ return {}; } })();
+if(prefs.haptic === undefined) prefs.haptic = true;
+if(prefs.sound === undefined) prefs.sound = true;
+function savePrefs(){ try{ localStorage.setItem('turfscore_prefs', JSON.stringify(prefs)); }catch(e){} }
+
 const hapticLabel = document.createElement('label');
 hapticLabel.setAttribute('aria-hidden','true');
-hapticLabel.style.display = 'none';
+hapticLabel.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none;';
 const hapticInput = document.createElement('input');
 hapticInput.type = 'checkbox';
 hapticInput.setAttribute('switch','');
 hapticLabel.appendChild(hapticInput);
-document.head.appendChild(hapticLabel);
+document.body.appendChild(hapticLabel);
 
 function haptic(strong){
   try{
@@ -774,10 +786,38 @@ function haptic(strong){
   }catch(e){}
 }
 
+let audioCtx = null;
+function tick(strong){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const dur = strong ? 0.16 : 0.05;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.value = strong ? 220 : 900;
+    g.gain.setValueAtTime(0.07, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.01);
+  }catch(e){}
+}
+
+function updatePrefButtons(){
+  el('hapticToggle').textContent = 'Haptic: ' + (prefs.haptic ? 'On' : 'Off');
+  el('soundToggle').textContent = 'Sound: ' + (prefs.sound ? 'On' : 'Off');
+}
+el('hapticToggle').addEventListener('click', ()=>{ prefs.haptic = !prefs.haptic; savePrefs(); updatePrefButtons(); });
+el('soundToggle').addEventListener('click', ()=>{ prefs.sound = !prefs.sound; savePrefs(); updatePrefButtons(); });
+updatePrefButtons();
+
 document.addEventListener('click', (e)=>{
   const b = e.target.closest ? e.target.closest('button') : null;
   if(!b) return;
-  haptic(b.id === 'wicketBtn');
+  const strong = b.id === 'wicketBtn';
+  if(prefs.haptic) haptic(strong);
+  if(prefs.sound) tick(strong);
 });
 
 el('dateTag').textContent = new Date().toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'});
