@@ -1,5 +1,5 @@
 // Change this number whenever you update the app so phones pick up the new version
-const CACHE = 'turf-score-v2';
+const CACHE = 'turf-score-v3';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

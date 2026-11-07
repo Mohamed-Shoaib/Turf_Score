@@ -230,6 +230,19 @@ body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);col
 @media (prefers-color-scheme:dark){body:not([data-theme="light"]) .over-chip.placeholder{border-color:var(--line-dark);color:var(--text-2-dark);}}
 .prefs{display:flex;gap:8px;margin-bottom:14px;}
 .prefs .btn{width:auto;flex:1;}
+.coin-wrap{perspective:700px;display:flex;justify-content:center;margin:6px 0 18px;}
+.coin{width:130px;height:130px;position:relative;transform-style:preserve-3d;transition:transform 1.8s cubic-bezier(.2,.7,.2,1);}
+.coin-face{
+  position:absolute;inset:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--flood);color:#3A2A05;border:5px solid #C48F1E;
+  font-family:'Archivo Black',sans-serif;font-size:15px;line-height:1.15;overflow:hidden;word-break:break-word;
+}
+.coin-face.back{transform:rotateY(180deg);}
+.toss-won{font-family:'Archivo Black',sans-serif;font-size:18px;margin-bottom:12px;}
+.sb-toss{margin-top:8px;font-size:12px;color:#C9D8CE;}
+.sb-toss:empty{display:none;}
 </style>
 </head>
 <body>
@@ -248,9 +261,9 @@ body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);col
   <div id="setupScreen">
     <div class="card">
       <div class="section-title">New match</div>
-      <label for="teamAName">Team batting first</label>
+      <label for="teamAName">Team 1 name</label>
       <input type="text" id="teamAName" placeholder="e.g. Falcons" maxlength="20">
-      <label for="teamBName">Team batting second</label>
+      <label for="teamBName">Team 2 name</label>
       <input type="text" id="teamBName" placeholder="e.g. Strikers" maxlength="20">
       <div class="row2">
         <div>
@@ -263,13 +276,49 @@ body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);col
         </div>
       </div>
       <div style="margin-top:16px;">
-        <button class="btn" id="startMatchBtn">Start match</button>
+        <button class="btn" id="startMatchBtn">Next: Toss</button>
       </div>
     </div>
 
     <div class="card" id="historyCard">
       <div class="section-title">Past matches</div>
       <div id="historyList"><div class="empty">No matches saved yet.</div></div>
+    </div>
+  </div>
+
+  <!-- TOSS SCREEN -->
+  <div id="tossScreen" class="hidden">
+    <div class="card" id="coinCard">
+      <div class="section-title">Toss</div>
+      <div class="coin-wrap">
+        <div class="coin" id="coin">
+          <div class="coin-face" id="coinFront">Team 1</div>
+          <div class="coin-face back" id="coinBack">Team 2</div>
+        </div>
+      </div>
+      <button class="btn flood" id="flipBtn">Flip coin</button>
+      <button class="btn ghost" id="skipTossBtn" style="margin-top:8px;">Skip toss</button>
+    </div>
+
+    <div class="card hidden" id="tossWinnerCard">
+      <div class="section-title">Who won the toss?</div>
+      <div class="grid2">
+        <button class="btn" id="winnerABtn">Team 1</button>
+        <button class="btn" id="winnerBBtn">Team 2</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="tossDecisionCard">
+      <div class="toss-won" id="tossWonText"></div>
+      <div class="section-title">Choose to</div>
+      <div class="grid2">
+        <button class="btn" id="chooseBatBtn">Bat first</button>
+        <button class="btn" id="chooseBowlBtn">Bowl first</button>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn ghost" id="tossBackBtn">Back</button>
     </div>
   </div>
 
@@ -289,6 +338,7 @@ body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);col
         </div>
       </div>
       <div class="sb-target hidden" id="targetLine"></div>
+      <div class="sb-toss" id="tossLine"></div>
     </div>
 
     <div style="margin-bottom:14px;">
@@ -371,6 +421,7 @@ function el(id){ return document.getElementById(id); }
 
 function renderSetup(){
   el('setupScreen').classList.remove('hidden');
+  el('tossScreen').classList.add('hidden');
   el('matchScreen').classList.add('hidden');
   const hist = loadHistory();
   const listEl = el('historyList');
@@ -403,25 +454,93 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function startMatch(){
-  const teamA = (el('teamAName').value || 'Team A').trim();
-  const teamB = (el('teamBName').value || 'Team B').trim();
+let pending = null;
+let coinRot = 0;
+
+function showOnly(id){
+  ['setupScreen','tossScreen','matchScreen'].forEach(x=> el(x).classList.toggle('hidden', x !== id));
+}
+
+function goToToss(){
+  const teamA = (el('teamAName').value || 'Team 1').trim();
+  const teamB = (el('teamBName').value || 'Team 2').trim();
   const overs = Math.max(0, parseInt(el('oversLimit').value || '0', 10));
   const players = Math.min(11, Math.max(2, parseInt(el('playersPerSide').value || '7', 10)));
+  pending = { teamA, teamB, overs, players, winner: null, method: null };
+
+  el('coinFront').textContent = teamA;
+  el('coinBack').textContent = teamB;
+  el('winnerABtn').textContent = teamA;
+  el('winnerBBtn').textContent = teamB;
+
+  const coin = el('coin');
+  coin.style.transition = 'none';
+  coinRot = 0;
+  coin.style.transform = 'rotateY(0deg)';
+  void coin.offsetWidth;
+  coin.style.transition = '';
+
+  el('coinCard').classList.remove('hidden');
+  el('tossWinnerCard').classList.add('hidden');
+  el('tossDecisionCard').classList.add('hidden');
+  el('flipBtn').disabled = false;
+  el('flipBtn').style.opacity = '1';
+  el('skipTossBtn').classList.remove('hidden');
+  showOnly('tossScreen');
+}
+
+function flipCoin(){
+  if(!pending || pending.winner) return;
+  const winner = Math.random() < 0.5 ? 'A' : 'B';
+  const base = Math.ceil(coinRot / 360) * 360 + 1440;
+  coinRot = base + (winner === 'B' ? 180 : 0);
+  el('coin').style.transform = 'rotateY(' + coinRot + 'deg)';
+  el('flipBtn').disabled = true;
+  el('flipBtn').style.opacity = '0.5';
+  el('skipTossBtn').classList.add('hidden');
+  setTimeout(()=> showDecision(winner, 'coin'), 1900);
+}
+
+function skipToss(){
+  if(!pending) return;
+  el('coinCard').classList.add('hidden');
+  el('tossWinnerCard').classList.remove('hidden');
+  el('tossDecisionCard').classList.add('hidden');
+}
+
+function showDecision(winner, method){
+  pending.winner = winner;
+  pending.method = method;
+  const name = winner === 'A' ? pending.teamA : pending.teamB;
+  el('tossWonText').textContent = name + ' won the toss';
+  el('tossWinnerCard').classList.add('hidden');
+  el('tossDecisionCard').classList.remove('hidden');
+}
+
+function chooseDecision(decision){
+  if(!pending || !pending.winner) return;
+  const other = pending.winner === 'A' ? 'B' : 'A';
+  const first = decision === 'bat' ? pending.winner : other;
+  beginMatch(first, { winner: pending.winner, decision, method: pending.method });
+}
+
+function beginMatch(battingFirst, toss){
   state = {
-    teamA, teamB,
-    oversLimit: overs,
-    maxWickets: players - 1,
+    teamA: pending.teamA, teamB: pending.teamB,
+    oversLimit: pending.overs,
+    maxWickets: pending.players - 1,
     inningsNo: 1,
     innings1: newInnings(),
     innings2: newInnings(),
-    battingFirst: 'A',
+    battingFirst,
+    toss,
     finished: false,
     result: '',
     inn1Done: false,
     inn1Manual: false,
     savedId: null
   };
+  pending = null;
   saveState();
   renderMatch();
 }
@@ -692,6 +811,7 @@ function renderOverChips(inn){
 
 function renderMatch(){
   el('setupScreen').classList.add('hidden');
+  el('tossScreen').classList.add('hidden');
   el('matchScreen').classList.remove('hidden');
 
   const inn = currentInnings();
@@ -700,6 +820,12 @@ function renderMatch(){
   el('scoreLine').textContent = inn.runs + '/' + inn.wickets;
   el('oversLine').textContent = ballsToOvers(inn.balls) + (state.oversLimit>0 ? ' of ' + state.oversLimit : '') + ' overs';
   renderOverChips(inn);
+  if(state.toss){
+    const tw = state.toss.winner === 'A' ? state.teamA : state.teamB;
+    el('tossLine').textContent = tw + ' won the toss and chose to ' + (state.toss.decision === 'bat' ? 'bat' : 'bowl');
+  } else {
+    el('tossLine').textContent = '';
+  }
 
   const targetLine = el('targetLine');
   const awaitingSecond = state.inningsNo === 1 && state.inn1Done;
@@ -755,7 +881,14 @@ el('abandonBtn').addEventListener('click', ()=>{
   if(state && state.finished){ newMatchFromResult(); }
   else { abandonMatch(); }
 });
-el('startMatchBtn').addEventListener('click', startMatch);
+el('startMatchBtn').addEventListener('click', goToToss);
+el('flipBtn').addEventListener('click', flipCoin);
+el('skipTossBtn').addEventListener('click', skipToss);
+el('winnerABtn').addEventListener('click', ()=> showDecision('A', 'manual'));
+el('winnerBBtn').addEventListener('click', ()=> showDecision('B', 'manual'));
+el('chooseBatBtn').addEventListener('click', ()=> chooseDecision('bat'));
+el('chooseBowlBtn').addEventListener('click', ()=> chooseDecision('bowl'));
+el('tossBackBtn').addEventListener('click', ()=>{ pending = null; renderSetup(); });
 el('startSecondBtn').addEventListener('click', startSecondInnings);
 
 // Feedback on every button press: haptic (Android + iPhone) and a short click sound
