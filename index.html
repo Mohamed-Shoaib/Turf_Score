@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turf Score</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F3D2E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Turf Score">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --turf-1:#0F3D2E;
+  --turf-2:#1D6B4C;
+  --turf-3:#2F8F63;
+  --chalk:#F4F1E6;
+  --flood:#E8B23D;
+  --ball-red:#B4432C;
+  --ink:#132017;
+  --bg-light:#F4F1E6;
+  --card-light:#FFFFFF;
+  --line-light:rgba(19,32,23,0.12);
+  --text-2-light:#4B5A50;
+  --bg-dark:#0B1712;
+  --card-dark:#122019;
+  --line-dark:rgba(244,241,230,0.14);
+  --text-2-dark:#9FB3A6;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0;
+  font-family:'Work Sans',system-ui,sans-serif;
+  background:var(--bg-light);
+  color:var(--ink);
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg-active:var(--bg-dark);
+    --card-active:var(--card-dark);
+    --line-active:var(--line-dark);
+    --text2-active:var(--text-2-dark);
+  }
+  body:not([data-theme="light"]){background:var(--bg-dark);color:var(--chalk);}
+}
+:root[data-theme="dark"]{
+  --bg-active:var(--bg-dark);
+}
+body[data-theme="dark"]{background:var(--bg-dark);color:var(--chalk);}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px;}
+.brand{
+  display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;
+}
+.brand h1{
+  font-family:'Archivo Black',sans-serif;
+  font-size:22px;
+  letter-spacing:0.5px;
+  margin:0;
+  color:var(--turf-2);
+}
+body[data-theme="dark"] .brand h1, @media (prefers-color-scheme:dark){body:not([data-theme="light"]) .brand h1{color:var(--turf-3);}}
+.brand span{font-size:13px;color:var(--text-2-light);}
+body[data-theme="dark"] .brand span{color:var(--text-2-dark);}
+
+.card{
+  background:var(--card-light);
+  border:1px solid var(--line-light);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:14px;
+}
+body[data-theme="dark"] .card{background:var(--card-dark);border-color:var(--line-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .card{background:var(--card-dark);border-color:var(--line-dark);}}
+
+label{display:block;font-size:13px;color:var(--text-2-light);margin:10px 0 5px;}
+body[data-theme="dark"] label{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) label{color:var(--text-2-dark);}}
+
+input[type=text],input[type=number]{
+  width:100%;
+  font-family:inherit;
+  font-size:16px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid var(--line-light);
+  background:transparent;
+  color:inherit;
+}
+body[data-theme="dark"] input{border-color:var(--line-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) input{border-color:var(--line-dark);}}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.btn{
+  font-family:'Work Sans',sans-serif;
+  font-weight:600;
+  font-size:15px;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid var(--turf-2);
+  background:var(--turf-2);
+  color:var(--chalk);
+  cursor:pointer;
+  width:100%;
+}
+.btn:active{transform:scale(0.98);}
+.btn.ghost{background:transparent;color:var(--turf-2);}
+body[data-theme="dark"] .btn.ghost{color:var(--turf-3);border-color:var(--turf-3);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .btn.ghost{color:var(--turf-3);border-color:var(--turf-3);}}
+.btn.flood{background:var(--flood);border-color:var(--flood);color:#3A2A05;}
+.btn.danger{background:transparent;border-color:var(--ball-red);color:var(--ball-red);}
+.btn.small{padding:8px 10px;font-size:13px;}
+
+.scoreboard{
+  background:var(--turf-1);
+  border-radius:16px;
+  padding:20px 18px;
+  color:var(--chalk);
+  margin-bottom:14px;
+}
+.sb-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.sb-team{font-size:13px;color:var(--flood);letter-spacing:0.3px;}
+.sb-score{
+  font-family:'Archivo Black',sans-serif;
+  font-size:44px;
+  line-height:1;
+  margin:6px 0 2px;
+}
+.sb-overs{font-size:13px;color:#C9D8CE;}
+.sb-target{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(244,241,230,0.18);
+  font-size:13px;
+  color:#C9D8CE;
+}
+.sb-target b{color:var(--chalk);}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.runbtn{
+  font-family:'Archivo Black',sans-serif;
+  font-size:20px;
+  padding:14px 0;
+  border-radius:12px;
+  border:1px solid var(--turf-2);
+  background:transparent;
+  color:var(--turf-2);
+  cursor:pointer;
+}
+body[data-theme="dark"] .runbtn{color:var(--turf-3);border-color:var(--turf-3);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .runbtn{color:var(--turf-3);border-color:var(--turf-3);}}
+.runbtn:active{background:var(--turf-2);color:var(--chalk);}
+
+.extras{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;}
+.extras button{
+  font-size:13px;font-weight:600;padding:10px;border-radius:10px;
+  border:1px solid var(--line-light);background:transparent;color:inherit;cursor:pointer;
+}
+body[data-theme="dark"] .extras button{border-color:var(--line-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .extras button{border-color:var(--line-dark);}}
+
+.wicketbtn{
+  width:100%;margin-top:8px;padding:12px;border-radius:10px;
+  border:1px solid var(--ball-red);background:transparent;color:var(--ball-red);
+  font-weight:700;font-size:14px;cursor:pointer;
+}
+.wicketbtn:active{background:var(--ball-red);color:var(--chalk);}
+
+.actions-row{display:flex;gap:8px;margin-top:12px;}
+.actions-row .btn{width:auto;flex:1;}
+
+.section-title{font-size:13px;font-weight:600;color:var(--text-2-light);text-transform:none;margin:0 0 8px;}
+body[data-theme="dark"] .section-title{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .section-title{color:var(--text-2-dark);}}
+
+.history-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--line-light);font-size:14px;
+}
+body[data-theme="dark"] .history-item{border-color:var(--line-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .history-item{border-color:var(--line-dark);}}
+.history-item:last-child{border-bottom:none;}
+.history-main b{display:block;}
+.history-meta{font-size:12px;color:var(--text-2-light);}
+body[data-theme="dark"] .history-meta{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .history-meta{color:var(--text-2-dark);}}
+.del-x{background:none;border:none;color:var(--ball-red);font-size:18px;cursor:pointer;padding:4px 8px;}
+
+.empty{font-size:13px;color:var(--text-2-light);text-align:center;padding:10px 0;}
+body[data-theme="dark"] .empty{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .empty{color:var(--text-2-dark);}}
+
+.hidden{display:none;}
+.result-banner{
+  background:var(--flood);color:#3A2A05;padding:14px 16px;border-radius:14px;
+  font-weight:700;font-size:15px;margin-bottom:14px;text-align:center;
+}
+.log{font-size:12px;color:var(--text-2-light);margin-top:8px;min-height:16px;}
+body[data-theme="dark"] .log{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .log{color:var(--text-2-dark);}}
+
+.over-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.over-row{margin-bottom:12px;}
+.over-row:last-child{margin-bottom:0;}
+.over-row-label{font-size:12px;font-weight:600;color:var(--text-2-light);margin-bottom:6px;}
+body[data-theme="dark"] .over-row-label{color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .over-row-label{color:var(--text-2-dark);}}
+.over-chip{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:13px;
+  background:var(--turf-1);color:var(--chalk);
+}
+.over-chip.wd,.over-chip.nb{background:var(--flood);color:#3A2A05;}
+.over-chip.w{background:var(--ball-red);color:var(--chalk);}
+.over-chip.placeholder{
+  background:transparent;border:1px dashed var(--line-light);color:var(--text-2-light);
+}
+body[data-theme="dark"] .over-chip.placeholder{border-color:var(--line-dark);color:var(--text-2-dark);}
+@media (prefers-color-scheme:dark){body:not([data-theme="light"]) .over-chip.placeholder{border-color:var(--line-dark);color:var(--text-2-dark);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <h1>Turf Score</h1>
+    <span id="dateTag"></span>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="setupScreen">
+    <div class="card">
+      <div class="section-title">New match</div>
+      <label for="teamAName">Team batting first</label>
+      <input type="text" id="teamAName" placeholder="e.g. Falcons" maxlength="20">
+      <label for="teamBName">Team batting second</label>
+      <input type="text" id="teamBName" placeholder="e.g. Strikers" maxlength="20">
+      <div class="row2">
+        <div>
+          <label for="oversLimit">Overs (0 = no limit)</label>
+          <input type="number" id="oversLimit" value="6" min="0" max="50">
+        </div>
+        <div>
+          <label for="playersPerSide">Players per side</label>
+          <input type="number" id="playersPerSide" value="7" min="2" max="11">
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn" id="startMatchBtn">Start match</button>
+      </div>
+    </div>
+
+    <div class="card" id="historyCard">
+      <div class="section-title">Past matches</div>
+      <div id="historyList"><div class="empty">No matches saved yet.</div></div>
+    </div>
+  </div>
+
+  <!-- SCORING SCREEN -->
+  <div id="matchScreen" class="hidden">
+    <div id="resultBanner" class="result-banner hidden"></div>
+
+    <div class="scoreboard">
+      <div class="sb-top">
+        <div>
+          <div class="sb-team" id="battingTeamLabel">TEAM A</div>
+          <div class="sb-score" id="scoreLine">0/0</div>
+          <div class="sb-overs" id="oversLine">0.0 overs</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="sb-team" id="oppTeamLabel">vs TEAM B</div>
+        </div>
+      </div>
+      <div class="sb-target hidden" id="targetLine"></div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <button class="btn flood hidden" id="startSecondBtn">Start 2nd innings</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Runs off this ball</div>
+      <div class="grid3">
+        <button class="runbtn" data-run="0">0</button>
+        <button class="runbtn" data-run="1">1</button>
+        <button class="runbtn" data-run="2">2</button>
+        <button class="runbtn" data-run="3">3</button>
+        <button class="runbtn" data-run="4">4</button>
+        <button class="runbtn" data-run="6">6</button>
+      </div>
+      <div class="extras">
+        <button id="wideBtn">Wide</button>
+        <button id="noballBtn">No ball</button>
+      </div>
+      <button class="wicketbtn" id="wicketBtn">Wicket</button>
+      <div class="log" id="lastAction"></div>
+      <div class="actions-row">
+        <button class="btn ghost small" id="undoBtn">Undo</button>
+        <button class="btn ghost small" id="endInningsBtn">End innings</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Ball by ball</div>
+      <div id="overChips"></div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn danger" id="abandonBtn">Abandon match</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_STATE = 'turfscore_current_match';
+const LS_HISTORY = 'turfscore_history';
+
+let state = null;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_STATE);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function saveState(){
+  try{ localStorage.setItem(LS_STATE, JSON.stringify(state)); }catch(e){}
+}
+function clearState(){
+  try{ localStorage.removeItem(LS_STATE); }catch(e){}
+  state = null;
+}
+function loadHistory(){
+  try{
+    const raw = localStorage.getItem(LS_HISTORY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveHistory(list){
+  try{ localStorage.setItem(LS_HISTORY, JSON.stringify(list)); }catch(e){}
+}
+
+function newInnings(){
+  return { runs:0, wickets:0, balls:0, history:[] };
+}
+
+function ballsToOvers(balls){
+  const o = Math.floor(balls/6);
+  const b = balls%6;
+  return o + '.' + b;
+}
+
+function el(id){ return document.getElementById(id); }
+
+function renderSetup(){
+  el('setupScreen').classList.remove('hidden');
+  el('matchScreen').classList.add('hidden');
+  const hist = loadHistory();
+  const listEl = el('historyList');
+  if(hist.length === 0){
+    listEl.innerHTML = '<div class="empty">No matches saved yet.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  hist.slice().reverse().forEach(m=>{
+    const row = document.createElement('div');
+    row.className = 'history-item';
+    row.innerHTML = `<div class="history-main">
+        <b>${escapeHtml(m.teamA)} ${m.scoreA} vs ${escapeHtml(m.teamB)} ${m.scoreB}</b>
+        <span class="history-meta">${escapeHtml(m.result)} &middot; ${m.date}</span>
+      </div>
+      <button class="del-x" aria-label="Delete match" data-id="${m.id}">&times;</button>`;
+    listEl.appendChild(row);
+  });
+  listEl.querySelectorAll('.del-x').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-id');
+      const h = loadHistory().filter(m=>m.id !== id);
+      saveHistory(h);
+      renderSetup();
+    });
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function startMatch(){
+  const teamA = (el('teamAName').value || 'Team A').trim();
+  const teamB = (el('teamBName').value || 'Team B').trim();
+  const overs = Math.max(0, parseInt(el('oversLimit').value || '0', 10));
+  const players = Math.min(11, Math.max(2, parseInt(el('playersPerSide').value || '7', 10)));
+  state = {
+    teamA, teamB,
+    oversLimit: overs,
+    maxWickets: players - 1,
+    inningsNo: 1,
+    innings1: newInnings(),
+    innings2: newInnings(),
+    battingFirst: 'A',
+    finished: false,
+    result: '',
+    inn1Done: false,
+    inn1Manual: false,
+    savedId: null
+  };
+  saveState();
+  renderMatch();
+}
+
+function currentInnings(){
+  return state.inningsNo === 1 ? state.innings1 : state.innings2;
+}
+
+function battingTeamName(){
+  const firstIsA = state.battingFirst === 'A';
+  if(state.inningsNo === 1) return firstIsA ? state.teamA : state.teamB;
+  return firstIsA ? state.teamB : state.teamA;
+}
+function bowlingTeamName(){
+  const firstIsA = state.battingFirst === 'A';
+  if(state.inningsNo === 1) return firstIsA ? state.teamB : state.teamA;
+  return firstIsA ? state.teamA : state.teamB;
+}
+
+function inningsOver(inn){
+  if(inn.wickets >= state.maxWickets) return true;
+  if(state.oversLimit > 0 && inn.balls >= state.oversLimit*6) return true;
+  return false;
+}
+
+function target(){
+  return state.innings1.runs + 1;
+}
+
+function checkChaseWin(){
+  if(state.inningsNo !== 2) return false;
+  return state.innings2.runs >= target();
+}
+
+function pushHistoryEntry(inn, type, val){
+  inn.history.push({type, val});
+}
+
+function record(type, runs){
+  const inn = currentInnings();
+  if(state.finished) return;
+  if(state.inningsNo === 1 && state.inn1Done) return;
+
+  if(type === 'run'){
+    inn.runs += runs;
+    inn.balls += 1;
+    pushHistoryEntry(inn, 'run', runs);
+    setLog(runs === 0 ? 'Dot ball' : runs + ' run' + (runs>1?'s':''));
+  } else if(type === 'wide'){
+    pushHistoryEntry(inn, 'wide', 0);
+    setLog('Wide — extra ball');
+  } else if(type === 'noball'){
+    pushHistoryEntry(inn, 'noball', 0);
+    setLog('No ball — extra ball');
+  } else if(type === 'wicket'){
+    inn.wickets += 1;
+    inn.balls += 1;
+    pushHistoryEntry(inn, 'wicket', 0);
+    setLog('Wicket! ' + inn.wickets + ' down');
+  }
+
+  saveState();
+  evaluateMatchState();
+  renderMatch();
+}
+
+function removeSavedMatch(){
+  if(!state.savedId) return;
+  saveHistory(loadHistory().filter(m=> m.id !== state.savedId));
+  state.savedId = null;
+}
+
+function undo(){
+  if(state.finished){
+    state.finished = false;
+    state.result = '';
+    removeSavedMatch();
+  }
+  // Started 2nd innings by mistake: go back to the end of innings 1
+  if(state.inningsNo === 2 && state.innings2.history.length === 0){
+    state.inningsNo = 1;
+    state.inn1Done = true;
+    setLog('Back to end of 1st innings');
+    saveState();
+    renderMatch();
+    return;
+  }
+  // Innings was ended manually: just reopen it
+  if(state.inningsNo === 1 && state.inn1Done && state.inn1Manual){
+    state.inn1Done = false;
+    state.inn1Manual = false;
+    setLog('Innings reopened');
+    saveState();
+    renderMatch();
+    return;
+  }
+  const inn = currentInnings();
+  if(state.inningsNo === 1) state.inn1Done = false;
+  const last = inn.history.pop();
+  if(!last){ renderMatch(); return; }
+  if(last.type === 'run'){ inn.runs -= last.val; inn.balls -= 1; }
+  else if(last.type === 'wicket'){ inn.wickets -= 1; inn.balls -= 1; }
+  // wide/noball changed nothing on runs or ball count, so nothing to revert
+  setLog('Last ball undone');
+  saveState();
+  renderMatch();
+}
+
+function evaluateMatchState(){
+  const inn = currentInnings();
+  if(state.inningsNo === 2 && checkChaseWin()){
+    finishMatch();
+    return;
+  }
+  if(inningsOver(inn)){
+    if(state.inningsNo === 1){
+      state.inn1Done = true;
+      state.inn1Manual = false;
+      setLog('Innings complete. Undo if the last ball was wrong, or start the 2nd innings.');
+    } else {
+      finishMatch();
+    }
+  }
+}
+
+function startSecondInnings(){
+  if(!(state.inningsNo === 1 && state.inn1Done)) return;
+  state.inningsNo = 2;
+  setLog('2nd innings started. Target ' + target());
+  saveState();
+  renderMatch();
+}
+
+function finishMatch(){
+  state.finished = true;
+  const s1 = state.innings1, s2 = state.innings2;
+  const firstTeam = state.battingFirst === 'A' ? state.teamA : state.teamB;
+  const secondTeam = state.battingFirst === 'A' ? state.teamB : state.teamA;
+  let result;
+  if(s2.runs > s1.runs){
+    const wLeft = state.maxWickets - s2.wickets;
+    result = secondTeam + ' won by ' + wLeft + ' wicket' + (wLeft===1?'':'s');
+  } else if(s1.runs > s2.runs){
+    const rMargin = s1.runs - s2.runs;
+    result = firstTeam + ' won by ' + rMargin + ' run' + (rMargin===1?'':'s');
+  } else {
+    result = 'Match tied';
+  }
+  state.result = result;
+  state.savedId = saveMatchToHistory();
+  saveState();
+}
+
+function saveMatchToHistory(){
+  const s1 = state.innings1, s2 = state.innings2;
+  const firstTeam = state.battingFirst === 'A' ? state.teamA : state.teamB;
+  const secondTeam = state.battingFirst === 'A' ? state.teamB : state.teamA;
+  const entry = {
+    id: 'm_' + Date.now(),
+    teamA: firstTeam,
+    teamB: secondTeam,
+    scoreA: s1.runs + '/' + s1.wickets,
+    scoreB: s2.runs + '/' + s2.wickets,
+    result: state.result,
+    date: new Date().toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'})
+  };
+  const hist = loadHistory();
+  hist.push(entry);
+  saveHistory(hist);
+  return entry.id;
+}
+
+function setLog(msg){
+  el('lastAction').textContent = msg;
+}
+
+function endInningsManually(){
+  const inn = currentInnings();
+  if(state.inningsNo === 1){
+    state.inn1Done = true;
+    state.inn1Manual = true;
+    setLog('Innings ended. Undo to reopen, or start the 2nd innings.');
+    saveState();
+    renderMatch();
+  } else {
+    finishMatch();
+    renderMatch();
+  }
+}
+
+function abandonMatch(){
+  clearState();
+  renderSetup();
+}
+
+function newMatchFromResult(){
+  clearState();
+  el('teamAName').value = '';
+  el('teamBName').value = '';
+  renderSetup();
+}
+
+function allOverGroups(inn){
+  let legal = 0;
+  let groups = [[]];
+  for(const entry of inn.history){
+    groups[groups.length-1].push(entry);
+    if(entry.type === 'run' || entry.type === 'wicket'){
+      legal += 1;
+      if(legal % 6 === 0){
+        groups.push([]);
+      }
+    }
+  }
+  return groups;
+}
+
+function chipFor(entry){
+  const chip = document.createElement('div');
+  if(entry.type === 'run'){
+    chip.className = 'over-chip';
+    chip.textContent = entry.val;
+  } else if(entry.type === 'wide'){
+    chip.className = 'over-chip wd';
+    chip.textContent = 'Wd';
+  } else if(entry.type === 'noball'){
+    chip.className = 'over-chip nb';
+    chip.textContent = 'Nb';
+  } else if(entry.type === 'wicket'){
+    chip.className = 'over-chip w';
+    chip.textContent = 'W';
+  }
+  return chip;
+}
+
+function renderOverChips(inn){
+  const wrap = el('overChips');
+  wrap.innerHTML = '';
+  const groups = allOverGroups(inn);
+  const lastIdx = groups.length - 1;
+  const order = groups.map((g,i)=>i).reverse();
+  order.forEach(idx=>{
+    const group = groups[idx];
+    const isLast = idx === lastIdx;
+    if(group.length === 0 && !isLast) return;
+    const row = document.createElement('div');
+    row.className = 'over-row';
+    const label = document.createElement('div');
+    label.className = 'over-row-label';
+    label.textContent = 'Over ' + (idx+1);
+    row.appendChild(label);
+    const chips = document.createElement('div');
+    chips.className = 'over-chips';
+    group.forEach(entry=> chips.appendChild(chipFor(entry)));
+    if(isLast){
+      const legalDone = group.filter(e=> e.type==='run' || e.type==='wicket').length;
+      for(let i=legalDone; i<6; i++){
+        const ph = document.createElement('div');
+        ph.className = 'over-chip placeholder';
+        ph.textContent = i+1;
+        chips.appendChild(ph);
+      }
+    }
+    row.appendChild(chips);
+    wrap.appendChild(row);
+  });
+}
+
+function renderMatch(){
+  el('setupScreen').classList.add('hidden');
+  el('matchScreen').classList.remove('hidden');
+
+  const inn = currentInnings();
+  el('battingTeamLabel').textContent = battingTeamName().toUpperCase();
+  el('oppTeamLabel').textContent = 'vs ' + bowlingTeamName().toUpperCase();
+  el('scoreLine').textContent = inn.runs + '/' + inn.wickets;
+  el('oversLine').textContent = ballsToOvers(inn.balls) + (state.oversLimit>0 ? ' of ' + state.oversLimit : '') + ' overs';
+  renderOverChips(inn);
+
+  const targetLine = el('targetLine');
+  const awaitingSecond = state.inningsNo === 1 && state.inn1Done;
+  el('startSecondBtn').classList.toggle('hidden', !awaitingSecond);
+  if(awaitingSecond){
+    targetLine.innerHTML = 'Innings complete &middot; target for ' + escapeHtml(bowlingTeamName()) + ' is <b>' + target() + '</b>';
+    targetLine.classList.remove('hidden');
+  } else if(state.inningsNo === 2 && !state.finished){
+    const need = Math.max(0, target() - inn.runs);
+    const ballsLeft = state.oversLimit>0 ? Math.max(0, state.oversLimit*6 - inn.balls) : null;
+    let txt = 'Target <b>' + target() + '</b> &middot; need <b>' + need + '</b> run' + (need===1?'':'s');
+    if(ballsLeft !== null) txt += ' from <b>' + ballsLeft + '</b> ball' + (ballsLeft===1?'':'s');
+    targetLine.innerHTML = txt;
+    targetLine.classList.remove('hidden');
+  } else {
+    targetLine.classList.add('hidden');
+  }
+
+  const banner = el('resultBanner');
+  if(state.finished){
+    banner.textContent = state.result;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  const controlsDisabled = state.finished || awaitingSecond;
+  document.querySelectorAll('.runbtn, #wideBtn, #noballBtn, #wicketBtn, #endInningsBtn').forEach(b=>{
+    b.style.opacity = controlsDisabled ? '0.4' : '1';
+    b.style.pointerEvents = controlsDisabled ? 'none' : 'auto';
+  });
+
+  el('endInningsBtn').textContent = state.finished ? 'Match complete' : (state.inningsNo === 1 ? 'End innings' : 'End match');
+  if(state.finished){
+    el('abandonBtn').textContent = 'New match';
+  } else {
+    el('abandonBtn').textContent = 'Abandon match';
+  }
+}
+
+document.querySelectorAll('.runbtn').forEach(b=>{
+  b.addEventListener('click', ()=> record('run', parseInt(b.getAttribute('data-run'),10)) );
+});
+el('wideBtn').addEventListener('click', ()=> record('wide'));
+el('noballBtn').addEventListener('click', ()=> record('noball'));
+el('wicketBtn').addEventListener('click', ()=> record('wicket'));
+el('undoBtn').addEventListener('click', undo);
+el('endInningsBtn').addEventListener('click', ()=>{
+  if(state.finished) return;
+  endInningsManually();
+});
+el('abandonBtn').addEventListener('click', ()=>{
+  if(state && state.finished){ newMatchFromResult(); }
+  else { abandonMatch(); }
+});
+el('startMatchBtn').addEventListener('click', startMatch);
+el('startSecondBtn').addEventListener('click', startSecondInnings);
+
+// Haptic feedback: vibrate on Android, hidden "switch" checkbox trick on iPhone Safari
+const hapticLabel = document.createElement('label');
+hapticLabel.setAttribute('aria-hidden','true');
+hapticLabel.style.display = 'none';
+const hapticInput = document.createElement('input');
+hapticInput.type = 'checkbox';
+hapticInput.setAttribute('switch','');
+hapticLabel.appendChild(hapticInput);
+document.head.appendChild(hapticLabel);
+
+function haptic(strong){
+  try{
+    if(navigator.vibrate){
+      navigator.vibrate(strong ? [30,40,30] : 12);
+      return;
+    }
+  }catch(e){}
+  try{
+    hapticLabel.click();
+    if(strong) setTimeout(()=> hapticLabel.click(), 90);
+  }catch(e){}
+}
+
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest ? e.target.closest('button') : null;
+  if(!b) return;
+  haptic(b.id === 'wicketBtn');
+});
+
+el('dateTag').textContent = new Date().toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'});
+
+const existing = loadState();
+if(existing){
+  state = existing;
+  renderMatch();
+} else {
+  renderSetup();
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
